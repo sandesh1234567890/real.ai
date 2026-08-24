@@ -4764,6 +4764,17 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.05, 100);
 camera.position.set(0, 0.15, 3.4);
 
+
+let mouseX = 0;
+let mouseY = 0;
+let targetCameraX = 0;
+let targetCameraY = 0.15; // Base height
+
+window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -5118,6 +5129,14 @@ function animate(){
       bar.material.opacity = talking ? 0.95 : 0.5;
     });
   }
+
+  // Camera Parallax
+  targetCameraX = mouseX * 0.4;
+  targetCameraY = 0.15 + (mouseY * 0.2);
+  
+  camera.position.x += (targetCameraX - camera.position.x) * k * 2.5;
+  camera.position.y += (targetCameraY - camera.position.y) * k * 2.5;
+  camera.lookAt(new THREE.Vector3(0, 0.15, 0));
 
   renderer.render(scene, camera);
 }
