@@ -4802,7 +4802,7 @@ controls.autoRotate = true;
 controls.autoRotateSpeed = 1.1;
 controls.addEventListener('start', () => { controls.autoRotate = false; });
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x33323a, 0.9));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x33323a, 0.5));
 const key = new THREE.DirectionalLight(0xffffff, 1.0);
 key.position.set(0, 3, 5); // Light from front to cast shadow straight back
 key.castShadow = true;
@@ -4820,6 +4820,31 @@ scene.add(key);
 const fill = new THREE.DirectionalLight(0xffffff, 0.35);
 fill.position.set(-4, 1, -3);
 scene.add(fill);
+
+// Create a Blob Shadow (Fake contact shadow)
+const shadowCanvas = document.createElement('canvas');
+shadowCanvas.width = 128;
+shadowCanvas.height = 128;
+const shadowCtx = shadowCanvas.getContext('2d');
+const gradient = shadowCtx.createRadialGradient(64, 64, 0, 64, 64, 64);
+gradient.addColorStop(0, 'rgba(0,0,0,0.8)');
+gradient.addColorStop(0.5, 'rgba(0,0,0,0.3)');
+gradient.addColorStop(1, 'rgba(0,0,0,0)');
+shadowCtx.fillStyle = gradient;
+shadowCtx.fillRect(0, 0, 128, 128);
+
+const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+const blobShadowGeo = new THREE.PlaneGeometry(1.5, 1.5);
+const blobShadowMat = new THREE.MeshBasicMaterial({
+    map: shadowTexture,
+    transparent: true,
+    depthWrite: false,
+    opacity: 0.9
+});
+const blobShadow = new THREE.Mesh(blobShadowGeo, blobShadowMat);
+blobShadow.rotation.x = -Math.PI / 2;
+blobShadow.position.y = 0.002;
+scene.add(blobShadow);
 
 // Add invisible shadow-catching floor
 const floorGeometry = new THREE.PlaneGeometry(15, 15);
