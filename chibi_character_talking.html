@@ -18,7 +18,8 @@
 </style>
 </head>
 <body>
-<div id="canvasWrap">
+<div id="bg-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: linear-gradient(to right, rgba(0,0,0,0) 20%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0) 80%); z-index: 0;"></div>
+<div id="canvasWrap" style="z-index: 1;">
   <div id="loading">Loading Model...</div>
     <div id="hint">Drag to orbit · scroll to zoom</div>
   
