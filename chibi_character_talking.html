@@ -4974,7 +4974,8 @@ async function askAI(text) {
         body: JSON.stringify({
           model: "llama3",
           messages: messages,
-          stream: false
+          stream: true,
+          options: { num_ctx: 2048 }
         })
       });
       
