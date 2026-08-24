@@ -4974,39 +4974,13 @@ async function askAI(text) {
         body: JSON.stringify({
           model: "llama3",
           messages: messages,
-          stream: true
+          stream: false
         })
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let replyText = "";
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.trim() !== "") {
-            try {
-              const data = JSON.parse(line);
-              if (data.message && data.message.content) {
-                replyText += data.message.content;
-                statusEl.textContent = `AI: ${replyText}`;
-              }
-            } catch (e) {
-              console.error("Error parsing JSON chunk:", e, line);
-            }
-          }
-        }
-      }
+      const data = await response.json();
+      if (data.error) throw new Error(data.error); const replyText = data.message?.content || JSON.stringify(data);
+      statusEl.textContent = `AI: ${replyText}`;
       
       // Push the AI's response to the history
       chatHistory.push({ role: "assistant", content: replyText });
