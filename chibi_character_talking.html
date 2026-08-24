@@ -50,7 +50,14 @@
   <!-- Settings Button -->
   <div style="position: absolute; bottom: 20px; left: 20px; z-index: 100; display: flex; gap: 10px;">
     <button id="btn-settings" style="background: rgba(255,255,255,0.15); border: none; font-size: 24px; cursor: pointer; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; transition: background 0.2s;" title="Settings">⚙️</button>
-    <button id="btn-bg" style="background: rgba(255,255,255,0.15); border: none; font-size: 24px; cursor: pointer; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: white; transition: background 0.2s;" title="Change Background">🖼️</button>
+    <select id="bg-select" style="background: rgba(255,255,255,0.15); border: none; padding: 0 15px; border-radius: 25px; color: white; font-weight: bold; outline: none; cursor: pointer; height: 45px; appearance: none; -webkit-appearance: none; text-align: center;">
+      <option value="none" style="color: black;">No Background</option>
+      <option value="bg_classroom.jpg" style="color: black;">Anime Classroom</option>
+      <option value="bg_bedroom.jpg" style="color: black;">Neon Bedroom</option>
+      <option value="bg_street.jpg" style="color: black;">Sakura Street</option>
+      <option value="bg_dark.jpg" style="color: black;">Dark Alley (Night)</option>
+      <option value="custom" style="color: black;">Upload Custom...</option>
+    </select>
     <input type="file" id="bg-input" accept="image/*" style="display: none;">
   </div>
 
@@ -4928,19 +4935,47 @@ const systemPromptInput = document.getElementById('system-prompt');
         });
     }
     const btnSaveSettings = document.getElementById('btn-save-settings');
-const btnBg = document.getElementById('btn-bg');
+const bgSelect = document.getElementById('bg-select');
 const bgInput = document.getElementById('bg-input');
+
+function applyBackground(url) {
+    if (url === 'none') {
+        document.body.style.backgroundImage = 'none';
+        document.body.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'; // default
+    } else {
+        document.body.style.backgroundImage = `url(${url})`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+    }
+}
 
 // Load saved background on startup
 const savedBg = localStorage.getItem('chibi_background');
 if (savedBg) {
-    document.body.style.backgroundImage = `url(${savedBg})`;
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
+    applyBackground(savedBg);
+    // Try to match the select dropdown if it's one of the presets
+    let matched = false;
+    Array.from(bgSelect.options).forEach(opt => {
+        if (opt.value === savedBg) {
+            bgSelect.value = savedBg;
+            matched = true;
+        }
+    });
+    if (!matched && savedBg !== 'none') {
+        bgSelect.value = 'custom';
+    }
+} else {
+    bgSelect.value = 'none';
 }
 
-btnBg.addEventListener('click', () => {
-    bgInput.click();
+bgSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === 'custom') {
+        bgInput.click();
+    } else {
+        applyBackground(val);
+        localStorage.setItem('chibi_background', val);
+    }
 });
 
 bgInput.addEventListener('change', (e) => {
