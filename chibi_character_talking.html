@@ -4979,49 +4979,84 @@ async function askAI(text) {
         })
       });
       
-      const data = await response.json();
-      if (data.error) throw new Error(data.error); const replyText = data.message?.content || JSON.stringify(data);
-      statusEl.textContent = `AI: ${replyText}`;
-      
-      // Push the AI's response to the history
-      chatHistory.push({ role: "assistant", content: replyText });
-      
-      const utterance = new SpeechSynthesisUtterance(replyText);
-      
-      // Try to find a highly natural female voice
-      const voices = synth.getVoices();
-      
-      // 1st Priority: Microsoft Edge Neural/Natural voices (incredibly realistic)
-      // 2nd Priority: Google Chrome Premium voices
-      // 3rd Priority: Standard OS female voices
-      const femaleVoice = 
-        voices.find(v => v.name.includes('Natural') && v.name.includes('Female')) ||
-        voices.find(v => v.name.includes('Natural') && (v.name.includes('Aria') || v.name.includes('Jenny') || v.name.includes('Sonia'))) ||
-        voices.find(v => v.name.includes('Google') && v.name.includes('Female')) ||
-        voices.find(v => v.name.includes('Samantha') || v.name.includes('Victoria')) ||
-        voices.find(v => v.name.includes('Zira')) ||
-        voices.find(v => v.name.includes('Female') || (v.name.includes('English') && v.name.includes('female')));
-        
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-      }
-      
-      // Adjust settings to make it sound more natural and conversational
-      utterance.pitch = 1.15; // Slightly higher but not too squeaky
-      utterance.rate = 1.05;  // Slightly faster for natural conversational pacing
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-      utterance.onstart = () => {
-        talking = true;
-        talkTargetScale = 1;
-        scheduleSyllables();
-      };
-      utterance.onend = () => {
-        talking = false;
-        talkTargetScale = 1;
-        btnTalk.disabled = false;
-        btnSend.disabled = false;
-      };
-      synth.speak(utterance);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      
+      let fullResponse = "";
+      let sentenceBuffer = "";
+      const sentenceRegex = /[.!\?]+[\s\n]*/;
+
+      function speakSentence(text) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          const voices = synth.getVoices();
+          const femaleVoice =
+            voices.find(v => v.name.includes('Natural') && v.name.includes('Female')) ||
+            voices.find(v => v.name.includes('Natural') && (v.name.includes('Aria') || v.name.includes('Jenny') || v.name.includes('Sonia'))) ||
+            voices.find(v => v.name.includes('Google') && v.name.includes('Female')) ||
+            voices.find(v => v.name.includes('Samantha') || v.name.includes('Victoria')) ||
+            voices.find(v => v.name.includes('Zira')) ||
+            voices.find(v => v.name.includes('Female') || (v.name.includes('English') && v.name.includes('female')));
+          if (femaleVoice) {
+            utterance.voice = femaleVoice;
+          }
+          utterance.pitch = 1.15;
+          utterance.rate = 1.05;
+          utterance.onstart = () => {
+            talking = true;
+            talkTargetScale = 1;
+            scheduleSyllables();
+          };
+          utterance.onend = () => {
+            talking = false;
+            talkTargetScale = 1;
+          };
+          synth.speak(utterance);
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const textLines = chunk.split('\n');
+        
+        for (const tline of textLines) {
+          if (tline.trim() !== "") {
+            try {
+              const data = JSON.parse(tline);
+              if (data.message && data.message.content) {
+                const text = data.message.content;
+                fullResponse += text;
+                sentenceBuffer += text;
+                statusEl.textContent = `AI: ${fullResponse}`;
+
+                // Check for sentence completion
+                const match = sentenceBuffer.match(sentenceRegex);
+                if (match) {
+                    const idx = match.index + match[0].length;
+                    const sentenceToSpeak = sentenceBuffer.substring(0, idx).trim();
+                    if (sentenceToSpeak.length > 0) {
+                        speakSentence(sentenceToSpeak);
+                    }
+                    sentenceBuffer = sentenceBuffer.substring(idx);
+                }
+              }
+            } catch (e) {
+              console.error("JSON parse error:", e);
+            }
+          }
+        }
+      }
+
+      if (sentenceBuffer.trim().length > 0) {
+          speakSentence(sentenceBuffer.trim());
+      }
+
+      chatHistory.push({ role: "assistant", content: fullResponse });
+      btnTalk.disabled = false;
+      btnSend.disabled = false;
     } catch (err) {
       console.error(err);
       statusEl.textContent = "Failed to connect to Ollama. Is it running?";
