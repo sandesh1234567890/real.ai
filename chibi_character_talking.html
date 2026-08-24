@@ -5160,13 +5160,12 @@ function animate(){
     });
   }
 
-  // Camera Parallax
-  targetCameraX = mouseX * 0.4;
-  targetCameraY = 0.15 + (mouseY * 0.2);
+  // Scene Parallax (to prevent breaking OrbitControls zoom/drag)
+  const targetSceneX = mouseX * 0.05;
+  const targetSceneY = mouseY * 0.05;
   
-  camera.position.x += (targetCameraX - camera.position.x) * k * 2.5;
-  camera.position.y += (targetCameraY - camera.position.y) * k * 2.5;
-  camera.lookAt(new THREE.Vector3(0, 0.15, 0));
+  scene.position.x += (targetSceneX - scene.position.x) * k * 5.0;
+  scene.position.y += (targetSceneY - scene.position.y) * k * 5.0;
 
   renderer.render(scene, camera);
 }
